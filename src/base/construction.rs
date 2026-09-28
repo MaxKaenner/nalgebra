@@ -980,6 +980,10 @@ macro_rules! componentwise_constructors_impl(
                 }
             }
         }
+
+        impl<T: ::num_traits::ConstZero> ::num_traits::ConstZero for Matrix<T, Const<$R>, Const<$C>, ArrayStorage<T, $R, $C>> {
+            const ZERO: Self = Self::new($($({let $args = (); T::ZERO}),*),*);
+        }
     )*}
 );
 
