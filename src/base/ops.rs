@@ -512,14 +512,16 @@ macro_rules! componentwise_scalarop_impl(
 componentwise_scalarop_impl!(Mul, mul, ClosedMulAssign; MulAssign, mul_assign);
 componentwise_scalarop_impl!(Div, div, ClosedDivAssign; DivAssign, div_assign);
 
-impl<T, R: Dim, C: Dim, S> MulAdd<T, T> for Matrix<T, R, C, S>
+impl<T, R: Dim, C: Dim, S> MulAdd<T> for Matrix<T, R, C, S>
     where T: Scalar + MulAdd<Output = T>,
           S: Storage<T, R, C>,
           DefaultAllocator: Allocator<R, C> {
     type Output = OMatrix<T, R, C>;
 
     #[inline]
-    fn mul_add(self, a: T, b: T) -> Self::Output {
+    fn mul_add(self, a: T, b: Self) -> Self::Output {
+        debug_assert_eq(self.ncols(), b.ncols());
+        debug_assert_eq(self.nrows(), b.nrows());
         let mut res = self.into_owned();
 
         // XXX: optimize our iterator!
@@ -528,7 +530,7 @@ impl<T, R: Dim, C: Dim, S> MulAdd<T, T> for Matrix<T, R, C, S>
         // (like SIMD). On the other hand, using the slice iterator is 4x faster.
 
         // for left in res.iter_mut() {
-        for left in res.as_mut_slice().iter_mut() {
+        for (left, b) in res.as_mut_slice().iter_mut().zip(b.as_slice().iter()) {
             *left = left.clone().mul_add(a.clone(), b.clone())
         }
 
@@ -536,26 +538,28 @@ impl<T, R: Dim, C: Dim, S> MulAdd<T, T> for Matrix<T, R, C, S>
     }
 }
 
-impl<'a, T, R: Dim, C: Dim, S> MulAdd<T, T> for &'a Matrix<T, R, C, S>
+impl<'a, T, R: Dim, C: Dim, S> MulAdd<T> for &'a Matrix<T, R, C, S>
     where T: Scalar + MulAdd,
           S: Storage<T, R, C>,
           DefaultAllocator: Allocator<R, C> {
     type Output = OMatrix<T, R, C>;
 
     #[inline]
-    fn mul_add(self, a: T, b: T) -> Self::Output {
-        self.clone_owned().mul_add(a, b)
+    fn mul_add(self, a: T, b: Self) -> Self::Output {
+        self.clone_owned().mul_add(a, &b.clone_owned())
     }
 }
 
-impl<T, R: Dim, C: Dim, S> MulAddAssign<T, T> for Matrix<T, R, C, S>
+impl<T, R: Dim, C: Dim, S> MulAddAssign<T> for Matrix<T, R, C, S>
     where T: Scalar + MulAddAssign,
           S: StorageMut<T, R, C> {
     #[inline]
-    fn mul_add_assign(&mut self, a: T, b: T) {
+    fn mul_add_assign(&mut self, a: T, b: Self) {
+        debug_assert_eq(self.ncols(), b.ncols());
+        debug_assert_eq(self.nrows(), b.nrows());
         for j in 0 .. self.ncols() {
             for i in 0 .. self.nrows() {
-                unsafe { self.get_unchecked_mut((i, j)).mul_add_assign(a.clone(), b.clone()) };
+                unsafe { self.get_unchecked_mut((i, j)).mul_add_assign(a.clone(), b.get_unchecked_mut((i, j))) };
             }
         }
     }
