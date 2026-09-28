@@ -530,7 +530,7 @@ impl<T, R: Dim, C: Dim, S> MulAdd<T> for Matrix<T, R, C, S>
         // (like SIMD). On the other hand, using the slice iterator is 4x faster.
 
         // for left in res.iter_mut() {
-        for (left, b) in res.as_mut_slice().iter_mut().zip(b.as_slice().iter()) {
+        for (left, b) in res.as_mut_slice().iter_mut().zip(b.iter()) {
             *left = left.clone().mul_add(a.clone(), b.clone())
         }
 
