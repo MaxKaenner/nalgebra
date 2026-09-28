@@ -1,4 +1,4 @@
-use num::{One, Zero};
+use num::{MulAdd, MulAddAssign, One, Zero};
 use std::iter;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -511,6 +511,55 @@ macro_rules! componentwise_scalarop_impl(
 
 componentwise_scalarop_impl!(Mul, mul, ClosedMulAssign; MulAssign, mul_assign);
 componentwise_scalarop_impl!(Div, div, ClosedDivAssign; DivAssign, div_assign);
+
+impl<T, R: Dim, C: Dim, S> MullAdd<T, T> for Matrix<T, R, C, S>
+    where T: Scalar + MulAdd,
+          S: Storage<T, R, C>,
+          DefaultAllocator: Allocator<R, C> {
+    type Output = OMatrix<T, R, C>;
+
+    #[inline]
+    fn mul_add(self, a: T, b: T) -> Self::Output {
+        let mut res = self.into_owned();
+
+        // XXX: optimize our iterator!
+        //
+        // Using our own iterator prevents loop unrolling, which breaks some optimization
+        // (like SIMD). On the other hand, using the slice iterator is 4x faster.
+
+        // for left in res.iter_mut() {
+        for left in res.as_mut_slice().iter_mut() {
+            *left = left.clone().mul_add(a.clone(), b.clone())
+        }
+
+        res
+    }
+}
+
+impl<'a, T, R: Dim, C: Dim, S> MulAdd<T, T> for &'a Matrix<T, R, C, S>
+    where T: Scalar + MulAdd,
+          S: Storage<T, R, C>,
+          DefaultAllocator: Allocator<R, C> {
+    type Output = OMatrix<T, R, C>;
+
+    #[inline]
+    fn mul_add(self, a: T, b: T) -> Self::Output {
+        self.clone_owned().mul_add(a, b)
+    }
+}
+
+impl<T, R: Dim, C: Dim, S> MulAddAssign<T, T> for Matrix<T, R, C, S>
+    where T: Scalar + MulAddAssign,
+          S: StorageMut<T, R, C> {
+    #[inline]
+    fn mul_add_assign(&mut self, a: T, b: T) {
+        for j in 0 .. self.ncols() {
+            for i in 0 .. self.nrows() {
+                unsafe { self.get_unchecked_mut((i, j)).mul_add_assign(a.clone(), b.clone()) };
+            }
+        }
+    }
+}
 
 macro_rules! left_scalar_mul_impl(
     ($($T: ty),* $(,)*) => {$(
