@@ -512,7 +512,7 @@ macro_rules! componentwise_scalarop_impl(
 componentwise_scalarop_impl!(Mul, mul, ClosedMulAssign; MulAssign, mul_assign);
 componentwise_scalarop_impl!(Div, div, ClosedDivAssign; DivAssign, div_assign);
 
-impl<T, R: Dim, C: Dim, S> MullAdd<T, T> for Matrix<T, R, C, S>
+impl<T, R: Dim, C: Dim, S> MulAdd<T, T> for Matrix<T, R, C, S>
     where T: Scalar + MulAdd,
           S: Storage<T, R, C>,
           DefaultAllocator: Allocator<R, C> {
