@@ -520,8 +520,8 @@ impl<T, R: Dim, C: Dim, S> MulAdd<T> for Matrix<T, R, C, S>
 
     #[inline]
     fn mul_add(self, a: T, b: Self) -> Self::Output {
-        debug_assert_eq(self.ncols(), b.ncols());
-        debug_assert_eq(self.nrows(), b.nrows());
+        debug_assert_eq!(self.ncols(), b.ncols());
+        debug_assert_eq!(self.nrows(), b.nrows());
         let mut res = self.into_owned();
 
         // XXX: optimize our iterator!
@@ -555,8 +555,8 @@ impl<T, R: Dim, C: Dim, S> MulAddAssign<T> for Matrix<T, R, C, S>
           S: StorageMut<T, R, C> {
     #[inline]
     fn mul_add_assign(&mut self, a: T, b: Self) {
-        debug_assert_eq(self.ncols(), b.ncols());
-        debug_assert_eq(self.nrows(), b.nrows());
+        debug_assert_eq!(self.ncols(), b.ncols());
+        debug_assert_eq!(self.nrows(), b.nrows());
         for j in 0 .. self.ncols() {
             for i in 0 .. self.nrows() {
                 unsafe { self.get_unchecked_mut((i, j)).mul_add_assign(a.clone(), b.get_unchecked_mut((i, j))) };
