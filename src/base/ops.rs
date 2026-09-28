@@ -559,7 +559,7 @@ impl<T, R: Dim, C: Dim, S> MulAddAssign<T> for Matrix<T, R, C, S>
         debug_assert_eq!(self.nrows(), b.nrows());
         for j in 0 .. self.ncols() {
             for i in 0 .. self.nrows() {
-                unsafe { self.get_unchecked_mut((i, j)).mul_add_assign(a.clone(), b.get_unchecked_mut((i, j))) };
+                unsafe { self.get_unchecked_mut((i, j)).mul_add_assign(a.clone(), b.get_unchecked((i, j)).clone()) };
             }
         }
     }
